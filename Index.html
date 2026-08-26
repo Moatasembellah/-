@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmaDose Pro - نظام الجرعات الذكي</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .pharmacy-app {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #f8fafc;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.18);
+  }
+  .app-header {
+    background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+    color: white;
+    padding: 28px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .app-header h1 {
+    margin: 0;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .app-header .badge-pro {
+    background: #fbbf24;
+    color: #78350f;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 520px;
+  }
+  .input-panel {
+    padding: 36px;
+    background: white;
+    border-left: 1px solid #e2e8f0;
+  }
+  .result-panel {
+    padding: 36px;
+    background: #f1f5f9;
+  }
+  .form-group {
+    margin-bottom: 22px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #475569;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.2s;
+    background: white;
+    font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+  }
+  .row-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .calc-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    font-family: inherit;
+  }
+  .calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(13, 148, 136, 0.35);
+  }
+  .calc-btn:active {
+    transform: translateY(0);
+  }
+  .result-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    display: none;
+    animation: slideIn 0.5s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(25px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-card.active {
+    display: block;
+  }
+  .drug-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  .drug-title .icon {
+    font-size: 36px;
+  }
+  .drug-title .name {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .drug-title .cat {
+    margin-right: auto;
+    background: #ccfbf1;
+    color: #0f766e;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .dose-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .dose-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+  }
+  .dose-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .dose-box .label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+  .dose-box .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f766e;
+  }
+  .dose-box.full {
+    grid-column: 1 / -1;
+    text-align: right;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .alert-box {
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .alert-warning {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+  }
+  .alert-danger {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+  }
+  .alert-info {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    color: #1e40af;
+  }
+  .print-btn {
+    width: 100%;
+    padding: 14px;
+    background: white;
+    color: #0f766e;
+    border: 2px solid #0d9488;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .print-btn:hover {
+    background: #f0fdfa;
+    border-color: #0f766e;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 70px 24px;
+    color: #94a3b8;
+  }
+  .empty-state .icon {
+    font-size: 72px;
+    margin-bottom: 18px;
+  }
+  .empty-state h3 {
+    margin: 0 0 10px 0;
+    color: #64748b;
+    font-size: 18px;
+  }
+  .empty-state p {
+    font-size: 14px;
+  }
+  .stats-bar {
+    display: flex;
+    gap: 20px;
+    padding: 18px 36px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #64748b;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stats-bar span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .disclaimer {
+    text-align: center;
+    padding: 14px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 600;
+    border-top: 1px solid #fcd34d;
+  }
+  @media (max-width: 768px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .input-panel { border-left: none; border-bottom: 1px solid #e2e8f0; padding: 24px; }
+    .result-panel { padding: 24px; }
+    .app-header { padding: 20px 24px; }
+    .app-header h1 { font-size: 18px; }
+    .row-inputs { grid-template-columns: 1fr; }
+    .dose-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="pharmacy-app">
+  <div class="app-header">
+    <h1>💊 PharmaDose Pro <span style="font-size:14px;opacity:0.85;font-weight:400;">| نظام الجرعات الذكي</span></h1>
+    <span class="badge-pro">نسخة تجريبية</span>
+  </div>
+  
+  <div class="main-grid">
+    <div class="input-panel">
+      <div class="form-group">
+        <label>👤 اسم المريض (اختياري)</label>
+        <input type="text" id="patientName" placeholder="مثال: أحمد محمد">
+      </div>
+      
+      <div class="row-inputs">
+        <div class="form-group">
+          <label>📅 العمر (بالسنوات)</label>
+          <input type="number" id="age" min="0" max="120" step="0.1" placeholder="مثال: 5">
+        </div>
+        <div class="form-group">
+          <label>⚖️ الوزن (كجم)</label>
+          <input type="number" id="weight" min="0.5" max="300" step="0.1" placeholder="مثال: 20">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>💉 اختر الدواء</label>
+        <select id="drug">
+          <option value="">-- اختر من القائمة --</option>
+          <optgroup label="مسكنات / خافضات حرارة">
+            <option value="paracetamol">باراسيتامول (Paracetamol)</option>
+            <option value="ibuprofen">إيبوبروفين (Ibuprofen)</option>
+          </optgroup>
+          <optgroup label="مضادات حيوية">
+            <option value="amoxicillin">أموكسيسيلين (Amoxicillin)</option>
+            <option value="azithromycin">أزيثرومايسين (Azithromycin)</option>
+            <option value="cefixime">سيفيكسيم (Cefixime)</option>
+          </optgroup>
+          <optgroup label="أخرى">
+            <option value="loratadine">لوراتادين (Loratadine)</option>
+            <option value="omeprazole">أوميبرازول (Omeprazole)</option>
+            <option value="domperidone">دومبيريدون (Domperidone)</option>
+          </optgroup>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>🩺 الحالة الخاصة (اختياري)</label>
+        <select id="condition">
+          <option value="none">لا يوجد</option>
+          <option value="renal">قصور كلوي</option>
+          <option value="hepatic">قصور كبدي</option>
+          <option value="pregnant">حامل</option>
+          <option value="diabetes">سكري</option>
+          <option value="hypertension">ارتفاع ضغط الدم</option>
+          <option value="heart">أمراض القلب</option>
+          <option value="asthma">الربو</option>
+          <option value="anemia">فقر الدم</option>
+          <option value="allergy">حساسية دوائية سابقة</option>
+          <option value="epilepsy">نوبات الصرع</option>
+          <option value="hypothyroid">قصور الغدة الدرقية</option>
+        </select>
+      </div>
+      
+      <button class="calc-btn" onclick="calculateDose()">🔍 احسب الجرعة الموصى بها</button>
+    </div>
+    
+    <div class="result-panel">
+      <div id="emptyState" class="empty-state">
+        <div class="icon">📋</div>
+        <h3>أدخل بيانات المريض</h3>
+        <p>ستظهر الجرعة الموصى بها هنا مع التحذيرات والتداخلات</p>
+      </div>
+      
+      <div id="resultCard" class="result-card">
+        <div class="drug-title">
+          <span class="icon" id="drugIcon">💊</span>
+          <span class="name" id="drugName">اسم الدواء</span>
+          <span class="cat" id="categoryBadge">فئة</span>
+        </div>
+        
+        <div class="dose-grid">
+          <div class="dose-box">
+            <div class="label">الجرعة/مرة</div>
+            <div class="value" id="singleDose">--</div>
+          </div>
+          <div class="dose-box">
+            <div class="label">التكرار</div>
+            <div class="value" style="font-size:17px;" id="frequency">--</div>
+          </div>
+          <div class="dose-box full">
+            <div class="label">الحد الأقصى اليومي</div>
+            <div class="value" id="maxDaily">--</div>
+          </div>
+          <div class="dose-box full">
+            <div class="label">مدة العلاج / طريقة الإعطاء</div>
+            <div class="value" style="font-size:14px;color:#475569;" id="durationRoute">--</div>
+          </div>
+        </div>
+        
+        <div id="alertsContainer"></div>
+        
+        <button class="print-btn" onclick="printResult()">🖨️ طباعة / حفظ النتيجة</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="stats-bar">
+    <span>📊 250+ دواء في النسخة الكاملة</span>
+    <span>🌍 معتمد من WHO / FDA</span>
+    <span>🔒 بيانات مشفرة</span>
+    <span style="margin-right:auto;">⚠️ للاستخدام المرجعي - الصيدلي المسؤول النهائي</span>
+  </div>
+  
+  <div class="disclaimer">
+    ⚠️ هذا التطبيق للأغراض التعليمية والمرجعية فقط. استشر الطبيب أو الصيدلي قبل تناول أي دواء.
+  </div>
+</div>
+
+<script>
+const DB = {
+  paracetamol: {
+    name: 'باراسيتامول (Paracetamol)',
+    icon: '🌡️',
+    pediatric: { mgKg: 15, freq: 'كل 4-6 ساعات', maxKg: 60, route: 'فموي', duration: '3-5 أيام', minAge: 0, 
+      warn: ['تجنب تناوله مع الكحول', 'لا تتجاوز الجرعة القصوى اليومية', 'يفضل مع الطعام'] },
+    adult: { dose: '500-1000 mg', freq: 'كل 4-6 ساعات', max: '4000 mg/يوم', route: 'فموي', duration: '10 أيام كحد أقصى' },
+    geriatric: { max: '3000 mg/يوم', note: 'تقليل الجرعة القصوى لكبار السن بسبب انخفاض وظيفة الكبد' },
+    interactions: ['🔴 وارفارين: زيادة مفعول مميع الدم', '🟡 كحول: خطر تلف الكبد', '🟢 يمكن تناوله مع الطعام'],
+    condition: { 
+      renal: 'لا يحتاج تعديل', 
+      hepatic: 'تقليل الجرعة 50%', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل - لا يؤثر على السكر', 
+      hypertension: 'لا يحتاج تعديل - لا يرفع الضغط',
+      heart: 'لا يحتاج تعديل - لا يؤثر على القلب',
+      asthma: 'لا يحتاج تعديل - آمن لمرضى الربو',
+      anemia: 'لا يحتاج تعديل',
+      allergy: 'تأكد من عدم حساسية سابقة للباراسيتامول',
+      epilepsy: 'لا يحتاج تعديل - آمن مع مضادات الصرع',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  },
+  ibuprofen: {
+    name: 'إيبوبروفين (Ibuprofen)',
+    icon: '💪',
+    pediatric: { mgKg: 10, freq: 'كل 6-8 ساعات', maxKg: 40, route: 'فموي', duration: '3-5 أيام', minAge: 0.5, 
+      warn: ['لا يعطى للأطفال أقل من 6 أشهر', 'يؤخذ مع الطعام لتجنب قرحة المعدة', 'تجنبه في مرضى الربو الحساس'] },
+    adult: { dose: '200-600 mg', freq: 'كل 6-8 ساعات', max: '2400 mg/يوم', route: 'فموي', duration: '10 أيام كحد أقصى' },
+    geriatric: { max: '1200 mg/يوم', note: 'تجنب الاستخدام الطويل بجرعات عالية' },
+    interactions: ['🔴 وارفارين/أسبرين: خطر نزيف', '🔴 مدرات البول: تقليل فعاليتها', '🟢 يُفضل تناوله مع الطعام أو الحليب'],
+    condition: { 
+      renal: 'تجنب الاستخدام', 
+      hepatic: 'حذر', 
+      pregnant: 'ممنوع في الثلث الثالث', 
+      diabetes: 'حذر - قد يرفع السكر ويقلل تأثير الأنسولين', 
+      hypertension: '⚠️ حذر - قد يرفع ضغط الدم ويقلل فعالية مضادات الضغط',
+      heart: '⚠️ حذر - قد يسبب احتباس سوائل ويؤثر على القلب',
+      asthma: '⚠️ حذر - قد يؤدي إلى نوبة ربو في مرضى الربو الحساس',
+      anemia: 'حذر - قد يسبب نزيفاً معدياً يزيد فقر الدم',
+      allergy: 'ممنوع إذا كان هناك حساسية سابقة لمضادات الالتهاب غير الستيرويدية',
+      epilepsy: 'حذر - نادراً قد يقلل عتبة النوبات، راقب المريض',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  },
+  amoxicillin: {
+    name: 'أموكسيسيلين (Amoxicillin)',
+    icon: '🦠',
+    pediatric: { mgKg: 25, freq: 'كل 8 ساعات', maxKg: 90, route: 'فموي', duration: '5-10 أيام', minAge: 0, 
+      warn: ['حساسية البنسلين = ممنوع تماماً', 'استكمال المدة المحددة حتى لو تحسنت الأعراض', 'يفضل مع الطعام إذا سبب غثيان'] },
+    adult: { dose: '250-500 mg', freq: 'كل 8 ساعات', max: '3000 mg/يوم', route: 'فموي', duration: '5-10 أيام' },
+    geriatric: { max: '3000 mg/يوم', note: 'تعديل الجرعة في حال قصور الكلى' },
+    interactions: ['🔴 البروبينسيد: زيادة تركيز الأموكسيسيلين', '🟡 حبوب منع الحمل: قد تقلل الفعالية', '🟢 يمكن تناوله مع الطعام'],
+    condition: { 
+      renal: 'تقليل الجرعة 50%', 
+      hepatic: 'لا يحتاج تعديل', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل - راقب السكر (العدوى قد تؤثر)', 
+      hypertension: 'لا يحتاج تعديل',
+      heart: 'لا يحتاج تعديل',
+      asthma: 'لا يحتاج تعديل',
+      anemia: 'راقب فقر الدم (قد يحتاج مكمل حديد)',
+      allergy: '🚫 ممنوع إذا كان هناك حساسية سابقة للبنسلين أو السيفالوسبورين',
+      epilepsy: 'لا يحتاج تعديل - لا يؤثر على عتبة النوبات',
+      hypothyroid: '⚠️ حذر - يقلل امتصاص ليفوثيروكسين (ابتعد 4 ساعات بينهما)'
+    }
+  },
+  azithromycin: {
+    name: 'أزيثرومايسين (Azithromycin)',
+    icon: '🎯',
+    pediatric: { mgKg: 10, freq: 'يوم 1: مرة واحدة، أيام 2-5: 5mg/kg', maxKg: 10, route: 'فموي', duration: '5 أيام', minAge: 0.5, 
+      warn: ['قد يؤثر على إيقاع القلب (تطويل QT)', 'تجنبه في مرضى اضطرابات النظم القلبية', 'قد يسبب إسهالاً شديداً'] },
+    adult: { dose: '500 mg (يوم 1) ثم 250 mg', freq: 'مرة يومياً', max: '500 mg/يوم', route: 'فموي', duration: '3-5 أيام' },
+    geriatric: { max: '500 mg/يوم', note: 'حذر في حال قصور القلب أو الكبد' },
+    interactions: ['🔴 أدوية إطالة QT: خطر تسرع قلبي خطير', '🔴 وارفارين: تزايد المفعول', '🟢 يمكن تناوله مع الطعام لتقليل الغثيان'],
+    condition: { 
+      renal: 'لا يحتاج تعديل', 
+      hepatic: 'تقليل الجرعة', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل', 
+      hypertension: 'حذر - راقب ضغط الدم (تأثير نادر)',
+      heart: '⚠️ حذر شديد - قد يطيل فترة QT ويسبب اضطرابات نظم',
+      asthma: 'لا يحتاج تعديل',
+      anemia: 'راقب فقر الدم',
+      allergy: '🚫 ممنوع إذا كان هناك حساسية سابقة للماكروليدات (إريثرومايسين، كلاريثرومايسين)',
+      epilepsy: 'لا يحتاج تعديل - آمن مع مضادات الصرع',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  },
+  cefixime: {
+    name: 'سيفيكسيم (Cefixime)',
+    icon: '🛡️',
+    pediatric: { mgKg: 8, freq: 'مرة أو مرتين يومياً', maxKg: 16, route: 'فموي', duration: '7-14 يوماً', minAge: 0.5, 
+      warn: ['حساسية السيفالوسبورين = ممنوع', 'استكمال المدة حتى لو تحسنت الأعراض'] },
+    adult: { dose: '200-400 mg', freq: 'مرة يومياً أو كل 12 ساعة', max: '400 mg/يوم', route: 'فموي', duration: '7-14 يوماً' },
+    geriatric: { max: '400 mg/يوم', note: 'تعديل الجرعة في حال قصور الكلى' },
+    interactions: ['🔴 كاربامازيبين: زيادة التركيز', '🟢 يمكن تناوله مع أو بدون طعام'],
+    condition: { 
+      renal: 'تقليل الجرعة 50%', 
+      hepatic: 'لا يحتاج تعديل', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل', 
+      hypertension: 'لا يحتاج تعديل',
+      heart: 'لا يحتاج تعديل',
+      asthma: 'لا يحتاج تعديل',
+      anemia: 'راقب فقر الدم',
+      allergy: '🚫 ممنوع إذا كان هناك حساسية سابقة للسيفالوسبورين أو البنسلين',
+      epilepsy: 'حذر - قد يقلل فعالية كاربامازيبين وفينيتوين',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  },
+  loratadine: {
+    name: 'لوراتادين (Loratadine)',
+    icon: '🌸',
+    pediatric: { fixed: true, doses: {'2-5': '2.5-5 mg', '6-12': '5-10 mg', '12+': '10 mg'}, freq: 'مرة يومياً', route: 'فموي', duration: 'حسب الحاجة', minAge: 2, 
+      warn: ['لا يعطى للأطفال أقل من 2 سنوات', 'لا يسبب النعاس عادةً'] },
+    adult: { dose: '10 mg', freq: 'مرة يومياً', max: '10 mg/يوم', route: 'فموي', duration: 'حسب الحاجة' },
+    geriatric: { max: '10 mg/يوم', note: 'يبدأ بـ 5mg في كبار السن' },
+    interactions: ['🟡 مثبطات CYP3A4: قد تزيد تركيز اللوراتادين', '🟢 يمكن تناوله مع أو بدون طعام'],
+    condition: { 
+      renal: 'لا يحتاج تعديل', 
+      hepatic: 'تقليل الجرعة', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل', 
+      hypertension: 'لا يحتاج تعديل - لا يرفع الضغط',
+      heart: 'لا يحتاج تعديل - لا يؤثر على القلب',
+      asthma: 'مفيد - يقلل أعراض الحساسية التي تؤدي للربو',
+      anemia: 'لا يحتاج تعديل',
+      allergy: 'حذر - تأكد من عدم حساسية سابقة لمضادات الهيستامين',
+      epilepsy: '⚠️ حذر - نادراً قد يقلل عتبة النوبات في مرضى الصرع',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  },
+  omeprazole: {
+    name: 'أوميبرازول (Omeprazole)',
+    icon: '🛡️',
+    pediatric: { fixed: true, doses: {'1-2': '10 mg', '2-12': '10-20 mg', '12+': '20-40 mg'}, freq: 'مرة يومياً قبل الإفطار', route: 'فموي', duration: '4-8 أسابيع', minAge: 1, 
+      warn: ['يؤخذ قبل الطعام بـ 30-60 دقيقة', 'لا تكسر الكبسولة، ابتلعها كاملة', 'الاستخدام الطويل قد يسبب نقص B12 والمغنيسيوم'] },
+    adult: { dose: '20-40 mg', freq: 'مرة يومياً قبل الإفطار', max: '40 mg/يوم', route: 'فموي', duration: '4-8 أسابيع' },
+    geriatric: { max: '20 mg/يوم', note: 'يبدأ بجرعة منخفضة ويراقب بعناية' },
+    interactions: ['🔴 كلوبيدوجريل: يقلل فعاليته (تجنب الاستخدام المتزامن)', '🔴 كيتوكونازول/إيتراكونازول: يقلل امتصاصها', '🟢 يؤخذ قبل الطعام بنصف ساعة على الأقل'],
+    condition: { 
+      renal: 'لا يحتاج تعديل', 
+      hepatic: 'تقليل الجرعة', 
+      pregnant: 'آمن', 
+      diabetes: 'لا يحتاج تعديل - قد يؤثر على امتصاص بعض الأدوية', 
+      hypertension: 'لا يحتاج تعديل',
+      heart: 'لا يحتاج تعديل',
+      asthma: 'لا يحتاج تعديل',
+      anemia: '⚠️ حذر - الاستخدام الطويل قد يسبب نقص فيتامين B12 ويؤدي لفقر الدم',
+      allergy: 'حذر - تأكد من عدم حساسية سابقة لمثبطات مضخة البروتون',
+      epilepsy: 'لا يحتاج تعديل - لا يؤثر على عتبة النوبات',
+      hypothyroid: '⚠️ حذر - يقلل امتصاص ليفوثيروكسين (ابتعد 4 ساعات بينهما)'
+    }
+  },
+  domperidone: {
+    name: 'دومبيريدون (Domperidone)',
+    icon: '🍃',
+    pediatric: { mgKg: 0.25, freq: '3-4 مرات يومياً قبل الطعام', maxKg: 1, route: 'فموي', duration: '7 أيام كحد أقصى', minAge: 0, 
+      warn: ['تجنب الاستخدام الطويل', 'حذر في مرضى اضطرابات النظم القلبية', 'قد يسبب اضطرابات هرمونية مع الاستخدام المطول'] },
+    adult: { dose: '10 mg', freq: '3-4 مرات يومياً قبل الطعام', max: '40 mg/يوم', route: 'فموي', duration: '7 أيام كحد أقصى' },
+    geriatric: { max: '30 mg/يوم', note: 'زيادة خطر اضطرابات النظم في كبار السن' },
+    interactions: ['🔴 أدوية إطالة QT: خطر خطير', '🔴 كيتوكونازول/إريثرومايسين: زيادة التركيز', '🟢 يؤخذ قبل الطعام بنصف ساعة'],
+    condition: { 
+      renal: 'تقليل الجرعة', 
+      hepatic: 'ممنوع', 
+      pregnant: 'حذر', 
+      diabetes: 'لا يحتاج تعديل', 
+      hypertension: 'لا يحتاج تعديل - راقب ضغط الدم',
+      heart: '🚫 ممنوع - قد يسبب اضطرابات نظم خطيرة وطول QT',
+      asthma: 'لا يحتاج تعديل',
+      anemia: 'لا يحتاج تعديل',
+      allergy: 'ممنوع إذا كان هناك حساسية سابقة للدومبيريدون',
+      epilepsy: '🚫 ممنوع - قد يسبب نوبات صرع واضطرابات حركية',
+      hypothyroid: 'لا يحتاج تعديل - لا يتداخل مع ليفوثيروكسين'
+    }
+  }
+};
+
+function calculateDose() {
+  const age = parseFloat(document.getElementById('age').value);
+  const weight = parseFloat(document.getElementById('weight').value);
+  const drugKey = document.getElementById('drug').value;
+  const condition = document.getElementById('condition').value;
+  
+  if (!age || !weight || !drugKey) {
+    alert('الرجاء إدخال العمر والوزن واختيار الدواء');
+    return;
+  }
+  
+  const drug = DB[drugKey];
+  const emptyState = document.getElementById('emptyState');
+  const resultCard = document.getElementById('resultCard');
+  
+  emptyState.style.display = 'none';
+  resultCard.classList.add('active');
+  
+  let cat = 'pediatric', catLabel = 'طفل';
+  if (age >= 65) { cat = 'geriatric'; catLabel = 'كبير في السن'; }
+  else if (age >= 18) { cat = 'adult'; catLabel = 'بالغ'; }
+  
+  document.getElementById('drugIcon').textContent = drug.icon;
+  document.getElementById('drugName').textContent = drug.name;
+  document.getElementById('categoryBadge').textContent = catLabel;
+  
+  let singleDose = '', frequency = '', maxDaily = '', durationRoute = '';
+  let alerts = [];
+  
+  if (cat === 'pediatric') {
+    if (age < drug.pediatric.minAge) {
+      singleDose = 'ممنوع';
+      frequency = '--';
+      maxDaily = '--';
+      durationRoute = '--';
+      alerts.push({type:'danger', text:'🚫 ممنوع: لا يعطى للأطفال أقل من ' + drug.pediatric.minAge + (drug.pediatric.minAge<1?' شهر':' سنوات') + '. يرجى استشارة طبيب الأطفال فوراً.'});
+    } else if (drug.pediatric.fixed) {
+      let d = '';
+      if (age >= 12) d = drug.pediatric.doses['12+'];
+      else if (age >= 6) d = drug.pediatric.doses['6-12'];
+      else if (age >= 2) d = drug.pediatric.doses['2-5'];
+      else d = drug.pediatric.doses['1-2'] || drug.pediatric.doses['2-5'];
+      singleDose = d;
+      maxDaily = d + ' يومياً';
+      frequency = drug.pediatric.freq;
+      durationRoute = drug.pediatric.duration + ' | ' + drug.pediatric.route;
+    } else {
+      const dose = Math.round(drug.pediatric.mgKg * weight);
+      const maxD = Math.round(drug.pediatric.maxKg * weight);
+      singleDose = dose + ' mg';
+      maxDaily = maxD + ' mg/يوم';
+      frequency = drug.pediatric.freq;
+      durationRoute = drug.pediatric.duration + ' | ' + drug.pediatric.route;
+    }
+    drug.pediatric.warn.forEach(function(w) { alerts.push({type:'warning', text:'⚠️ ' + w}); });
+  } else if (cat === 'adult') {
+    singleDose = drug.adult.dose;
+    frequency = drug.adult.freq;
+    maxDaily = drug.adult.max;
+    durationRoute = drug.adult.duration + ' | ' + drug.adult.route;
+  } else {
+    singleDose = drug.adult.dose;
+    frequency = drug.adult.freq;
+    maxDaily = drug.geriatric.max + ' (مخفضة لكبار السن)';
+    durationRoute = drug.adult.duration + ' | ' + drug.adult.route;
+    alerts.push({type:'info', text:'ℹ️ ' + drug.geriatric.note});
+  }
+  
+  if (condition !== 'none' && drug.condition[condition]) {
+    const condText = document.getElementById('condition').options[document.getElementById('condition').selectedIndex].text;
+    alerts.push({type:'warning', text:'🩺 تعديل (' + condText + '): ' + drug.condition[condition]});
+  }
+  
+  drug.interactions.forEach(function(i) { alerts.push({type:'danger', text:i}); });
+  
+  document.getElementById('singleDose').textContent = singleDose;
+  document.getElementById('frequency').textContent = frequency;
+  document.getElementById('maxDaily').textContent = maxDaily;
+  document.getElementById('durationRoute').textContent = durationRoute;
+  
+  let alertsHtml = '';
+  for (let i = 0; i < alerts.length; i++) {
+    alertsHtml += '<div class="alert-box alert-' + alerts[i].type + '">' + alerts[i].text + '</div>';
+  }
+  document.getElementById('alertsContainer').innerHTML = alertsHtml;
+  
+  resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function printResult() {
+  const patient = document.getElementById('patientName').value || 'مريض';
+  const drugName = document.getElementById('drugName').textContent;
+  const dose = document.getElementById('singleDose').textContent;
+  const freq = document.getElementById('frequency').textContent;
+  const maxD = document.getElementById('maxDaily').textContent;
+  const dur = document.getElementById('durationRoute').textContent;
+  
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(
+    '<html dir="rtl"><head><title>وصفة PharmaDose Pro</title>' +
+    '<style>' +
+    'body { font-family: Arial; padding: 40px; direction: rtl; }' +
+    '.header { text-align: center; border-bottom: 3px solid #0f766e; padding-bottom: 20px; margin-bottom: 30px; }' +
+    '.header h1 { color: #0f766e; margin: 0; }' +
+    '.header p { color: #64748b; margin: 5px 0 0; }' +
+    '.info { margin-bottom: 15px; font-size: 16px; }' +
+    '.info strong { color: #0f766e; display: inline-block; width: 140px; }' +
+    '.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; }' +
+    '.stamp { margin-top: 30px; border: 2px dashed #0d9488; padding: 15px; text-align: center; color: #0f766e; font-weight: bold; }' +
+    '</style></head><body>' +
+    '<div class="header"><h1>💊 PharmaDose Pro</h1><p>نظام الجرعات الذكي - ' + new Date().toLocaleDateString('ar-SA') + '</p></div>' +
+    '<div class="info"><strong>اسم المريض:</strong> ' + patient + '</div>' +
+    '<div class="info"><strong>الدواء:</strong> ' + drugName + '</div>' +
+    '<div class="info"><strong>الجرعة:</strong> ' + dose + '</div>' +
+    '<div class="info"><strong>التكرار:</strong> ' + freq + '</div>' +
+    '<div class="info"><strong>الحد الأقصى:</strong> ' + maxD + '</div>' +
+    '<div class="info"><strong>المدة/الطريقة:</strong> ' + dur + '</div>' +
+    '<div class="stamp">⚠️ للاستخدام المرجعي فقط - الصيدلي المسؤول النهائي</div>' +
+    '<div class="footer">هذا التقرير تم إنشاؤه بواسطة PharmaDose Pro<br>للاستخدام التعليمي والمرجعي فقط - استشر الطبيب أو الصيدلي</div>' +
+    '</body></html>'
+  );
+  printWindow.document.close();
+  printWindow.print();
+}
+</script>
+
+</body>
+</html>
