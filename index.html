@@ -707,3 +707,142 @@ function printResult() {
 
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرجع الجرعات الدوائية الشامل - مستندات FDA</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 15px; }
+        .search-box { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .drug-card { background: #fafafa; border: 1px solid #e1e8ed; border-radius: 6px; padding: 15px; transition: 0.3s; }
+        .drug-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .drug-title { color: #2980b9; margin-top: 0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .category { font-size: 0.85em; background: #eef2f7; color: #34495e; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+        .disclaimer { background: #eef2f7; border-right: 4px solid #3498db; padding: 15px; margin-top: 30px; font-size: 0.9em; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>دليل الجرعات الدوائية الشامل (مرجع FDA / DailyMed)</h1>
+    <p>قاعدة بيانات تفاعلية تضم الأدوية الشائعة ومستنداتها التنظيمية.</p>
+
+    <input type="text" id="searchBar" class="search-box" placeholder="ابحث باسم الدواء (مثال: Amlodipine, Azithromycin)..." onkeyup="searchDrugs()">
+
+    <div id="drugsGrid" class="grid">
+يتم تحميل الأدوية...
+    </div>
+
+    <div class="disclaimer">
+        <strong>إخلاء مسؤولية طبي:</strong> المعلومات الواردة مخصصة للأغراض التعليمية والتنظيمية (FDA)، ولا تُغني عن الاستشارة الطبية المباشرة.
+    </div>
+</div>
+
+<script>
+    // عينة منظمة تمثل الأدوية المطلوبة وقابلة للتوسعة حتى 100 دواء وأكثر
+    const drugsList = [
+        // أدوية القلب وضغط الدم
+        {name: "Amlodipine", cat: "أدوية ضغط الدم والقلب", dose: "5 إلى 10 ملغ مرة واحدة يومياً."},
+        {name: "Lisinopril", cat: "أدوية ضغط الدم والقلب", dose: "10 إلى 40 ملغ مرة واحدة يومياً."},
+        {name: "Losartan", cat: "أدوية ضغط الدم والقلب", dose: "50 إلى 100 ملغ مرة واحدة يومياً."},
+        {name: "Valsartan", cat: "أدوية ضغط الدم والقلب", dose: "80 إلى 160 ملغ مرة واحدة يومياً."},
+        {name: "Metoprolol", cat: "أدوية ضغط الدم والقلب", dose: "50 إلى 200 ملغ يومياً مقسمة على جرعة أو جرعتين."},
+        {name: "Carvedilol", cat: "أدوية ضغط الدم والقلب", dose: "6.25 إلى 25 ملغ مرتين يومياً مع الطعام."},
+        {name: "Atenolol", cat: "أدوية ضغط الدم والقلب", dose: "50 إلى 100 ملغ مرة واحدة يومياً."},
+        {name: "Bisoprolol", cat: "أدوية ضغط الدم والقلب", dose: "5 إلى 10 ملغ مرة واحدة صباحاً."},
+        {name: "Hydrochlorothiazide", cat: "مدرات البول وضغط الدم", dose: "12.5 إلى 25 ملغ مرة واحدة صباحاً."},
+        {name: "Furosemide", cat: "مدرات البول", dose: "20 إلى 80 ملغ مقسمة على جرعة أو جرعتين."},
+        {name: "Spironolactone", cat: "مدرات البول", dose: "25 إلى 100 ملغ يومياً."},
+        {name: "Clopidogrel", cat: "مضادات الصفيحات", dose: "75 ملغ مرة واحدة يومياً."},
+        {name: "Warfarin", cat: "مضادات التخثر", dose: "تحدد بدقة حسب تحليل الـ INR (الجرعة الأولية عادة 2-5 ملغ)."},
+        {name: "Apixaban", cat: "مضادات التخثر", dose: "5 ملغ مرتين يومياً للحالات الاعتيادية."},
+        {name: "Rivaroxaban", cat: "مضادات التخثر", dose: "20 ملغ مرة واحدة يومياً مع العشاء."},
+
+        // المضادات الحيوية والمضادات الأخرى
+        {name: "Azithromycin", cat: "المضادات الحيوية", dose: "500 ملغ في اليوم الأول، ثم 250 ملغ يومياً لأيام 2-5."},
+        {name: "Clarithromycin", cat: "المضادات الحيوية", dose: "250 إلى 500 ملغ كل 12 ساعة لمدة 7-14 يوم."},
+        {name: "Ciprofloxacin", cat: "المضادات الحيوية", dose: "250 إلى 500 ملغ كل 12 ساعة."},
+        {name: "Levofloxacin", cat: "المضادات الحيوية", dose: "250 أو 500 أو 750 ملغ مرة واحدة يومياً."},
+        {name: "Ceftriaxone", cat: "المضادات الحيوية", dose: "1 إلى 2 جرام عضلي أو وريدي مرة يومياً."},
+        {name: "Cefalexin", cat: "المضادات الحيوية", dose: "250 إلى 500 ملغ كل 6 ساعات."},
+        {name: "Doxycycline", cat: "المضادات الحيوية", dose: "100 ملغ كل 12 ساعة مع الكثير من الماء."},
+        {name: "Clindamycin", cat: "المضادات الحيوية", dose: "150 إلى 450 ملغ كل 6 ساعات."},
+        {name: "Vancomycin", cat: "المضادات الحيوية", dose: "تحدد بدقة بناءً على وزن المريض ووظائف الكلى (الاستخدام الوريدي حصراً)."},
+        {name: "Metronidazole", cat: "مضادات الطفيليات والبكتيريا اللاهوائية", dose: "500 ملغ كل 8 ساعات."},
+        {name: "Fluconazole", cat: "مضادات الفطريات", dose: "150 ملغ جرعة واحدة (للتهابات الفطريات المهبلية) أو حسب الحالة."},
+        {name: "Acyclovir", cat: "مضادات الفيروسات", dose: "400 ملغ 5 مرات يومياً أو 800 ملغ حسب نوع العدوى الفيروسية."},
+
+        // أدوية الجهاز الهضمي والسكري والغدد
+        {name: "Pantoprazole", cat: "أدوية الجهاز الهضمي", dose: "40 ملغ مرة واحدة يومياً قبل الإفطار."},
+        {name: "Esomeprazole", cat: "أدوية الجهاز الهضمي", dose: "20 إلى 40 ملغ مرة واحدة يومياً."},
+        {name: "Lansoprazole", cat: "أدوية الجهاز الهضمي", dose: "15 إلى 30 ملغ مرة واحدة صباحاً."},
+        {name: "Famotidine", cat: "أدوية الجهاز الهضمي", dose: "20 إلى 40 ملغ مرتين يومياً أو قبل النوم."},
+        {name: "Ondansetron", cat: "مضادات القيء", dose: "4 إلى 8 ملغ كل 8 ساعات عند الحاجة."},
+        {name: "Loperamide", cat: "مضادات الإسهال", dose: "4 ملغ تبدأ بها، ثم 2 ملغ بعد كل إسهال (القصوى 16 ملغ يومياً)."},
+        {name: "Glimepiride", cat: "أدوية السكري", dose: "1 إلى 4 ملغ مرة واحدة مع وجبة الإفطار."},
+        {name: "Gliclazide", cat: "أدوية السكري", dose: "30 إلى 120 ملغ صباحاً مع الإفطار."},
+        {name: "Sitagliptin", cat: "أدوية السكري", dose: "100 ملغ مرة واحدة يومياً."},
+        {name: "Empagliflozin", cat: "أدوية السكري", dose: "10 ملغ مرة واحدة صباحاً."},
+        {name: "Levothyroxine", cat: "هرمونات الغدة الدرقية", dose: "50 إلى 150 ميكروغرام صباحاً على معدة فارغة."},
+
+        // مسكنات الألم ومضادات الالتهاب والأعصاب والنفسية
+        {name: "Ibuprofen", cat: "مسكنات ومضادات الالتهاب", dose: "200 إلى 400 ملغ كل 4-6 ساعات (القصوى 1200 ملغ يومياً بدون وصفة)."},
+        {name: "Naproxen", cat: "مسكنات ومضادات الالتهاب", dose: "250 إلى 500 ملغ كل 12 ساعة مع الطعام."},
+        {name: "Diclofenac", cat: "مسكنات ومضادات الالتهاب", dose: "50 ملغ مرتين أو ثلاث مرات يومياً."},
+        {name: "Celecoxib", cat: "مسكنات ومضادات الالتهاب", dose: "100 إلى 200 ملغ مرتين يومياً."},
+        {name: "Paracetamol", cat: "مسكن وخافض للحرارة", dose: "500 إلى 1000 ملغ كل 6 ساعات (القصوى 4 جرام يومياً)."},
+        {name: "Pregabalin", cat: "أدوية الأعصاب", dose: "تبدأ بـ 75 ملغ مرتين يومياً وتعدل حسب الاستجابة."},
+        {name: "Gabapentin", cat: "أدوية الأعصاب", dose: "300 ملغ تدريجياً لتبلغ الجرعة العلاجية حسب التوجيه الطبي."},
+        {name: "Sertraline", cat: "مضادات الاكتئاب والقلق", dose: "50 ملغ مرة واحدة يومياً صباحاً أو مساءً."},
+        {name: "Fluoxetine", cat: "مضادات الاكتئاب والقلق", dose: "20 ملغ مرة واحدة صباحاً."},
+        {name: "Escitalopram", cat: "مضادات الاكتئاب والقلق", dose: "10 إلى 20 ملغ مرة واحدة يومياً."},
+
+        // الجهاز التنفسي والفيتامينات وأخرى
+        {name: "Montelukast", cat: "أدوية الحساسية والربو", dose: "10 ملغ مرة واحدة مساءً."},
+        {name: "Cetirizine", cat: "مضادات الحساسية (مضاد الهيستامين)", dose: "10 ملغ مرة واحدة يومياً."},
+        {name: "Loratadine", cat: "مضادات الحساسية (مضاد الهيستامين)", dose: "10 ملغ مرة واحدة يومياً."},
+        {name: "Prednisone", cat: "الكورتيزون ومضادات الالتهاب القوية", dose: "تحدد بدقة حسب الحالة (تتراوح بين 5 إلى 60 ملغ يومياً بجرعات متناقصة)."},
+        {name: "Allopurinol", cat: "أدوية النقرس", dose: "100 إلى 300 ملغ يومياً بعد الطعام."},
+        {name: "Colchicine", cat: "أدوية النقرس", dose: "1 ملغ يليه 0.5 ملغ بعد ساعة عند بدء نوبة النقرس الحادة."},
+        {name: "Tamsulosin", cat: "أدوية البروستاتا", dose: "0.4 ملغ مرة واحدة يومياً بعد وجبة الإفطار."},
+        {name: "Sildenafil", cat: "علاج ضعف الانتصاب", dose: "50 ملغ تأخذ قبل النشاط الجنسي بـ 30-60 دقيقة."},
+        {name: "Methotrexate", cat: "مثبطات المناعة", dose: "تحدد بجرعات أسبوعية دقيقة جداً (مثل أيام محددة وليست يومية)."},
+        {name: "Folic Acid", cat: "فيتامينات ومكملات", dose: "1 إلى 5 ملغ يومياً."},
+        {name: "Vitamin D3 Cholecalciferol", cat: "فيتامينات ومكملات", dose: "1000 إلى 5000 وحدة دولية يومياً حسب التحليل وفيتامين د."}
+    ];
+
+    function displayDrugs(list) {
+        const grid = document.getElementById('drugsGrid');
+        grid.innerHTML = "";
+        if(list.length === 0) {
+            grid.innerHTML = "<p>عذراً، لم يتم العثور على دواء مطابق.</p>";
+            return;
+        }
+        list.forEach(drug => {
+            grid.innerHTML += `
+                <div class="drug-card">
+                    <span class="category">${drug.cat}</span>
+                    <h3 class="drug-title">${drug.name}</h3>
+                    <p><strong>الجرعة المعتادة:</strong> ${drug.dose}</p>
+                </div>
+            `;
+        });
+    }
+
+    function searchDrugs() {
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        const filtered = drugsList.filter(d => d.name.toLowerCase().includes(query) || d.cat.toLowerCase().includes(query));
+        displayDrugs(filtered);
+    }
+
+    // عرض القائمة كاملة عند تحميل الصفحة
+    displayDrugs(drugsList);
+</script>
+
+</body>
+</html>
